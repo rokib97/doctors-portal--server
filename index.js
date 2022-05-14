@@ -32,6 +32,7 @@ async function run() {
       res.send(services);
     });
 
+    // api for user info data update / create
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
       const user = req.body;
