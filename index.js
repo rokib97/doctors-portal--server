@@ -50,6 +50,12 @@ async function run() {
       res.send(services);
     });
 
+    // get all users
+    app.get("/user", async (req, res) => {
+      const users = await userCollection.find().toArray();
+      res.send(users);
+    });
+
     // api for user info data update / create
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
