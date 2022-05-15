@@ -51,9 +51,20 @@ async function run() {
     });
 
     // get all users
-    app.get("/user", async (req, res) => {
+    app.get("/user", verifyJWT, async (req, res) => {
       const users = await userCollection.find().toArray();
       res.send(users);
+    });
+
+    // make user admin api
+    app.put("/user/admin/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const updateDoc = {
+        $set: { role: "admin" },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result);
     });
 
     // api for user info data update / create
@@ -74,6 +85,7 @@ async function run() {
       res.send({ result, token });
     });
 
+    // available services api
     app.get("/available", async (req, res) => {
       const date = req.query.date;
 
@@ -112,6 +124,7 @@ async function run() {
      * app.delete("/booking:id")  // delete a booking
      */
 
+    //find booking api
     app.get("/booking", verifyJWT, async (req, res) => {
       const patient = req.query.patient;
       const decodedEmail = req.decoded.email;
@@ -124,6 +137,7 @@ async function run() {
       }
     });
 
+    // post booking api
     app.post("/booking", async (req, res) => {
       const booking = req.body;
       const query = {
