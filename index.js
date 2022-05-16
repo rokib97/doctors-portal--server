@@ -45,7 +45,7 @@ async function run() {
     // get services data
     app.get("/service", async (req, res) => {
       const query = {};
-      const cursor = serviceCollection.find(query);
+      const cursor = serviceCollection.find(query).project({ name: 1 });
       const services = await cursor.toArray();
       res.send(services);
     });
@@ -95,7 +95,7 @@ async function run() {
       const token = jwt.sign(
         { email: email },
         process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "1d" }
       );
       res.send({ result, token });
     });
@@ -152,7 +152,7 @@ async function run() {
       }
     });
 
-    // post booking api
+    // post single booking api
     app.post("/booking", async (req, res) => {
       const booking = req.body;
       const query = {
@@ -160,6 +160,7 @@ async function run() {
         date: booking.date,
         patient: booking.patient,
       };
+      //check if the appoinment already is there or not
       const exists = await bookingCollection.findOne(query);
       if (exists) {
         return res.send({ success: false, booking: exists });
