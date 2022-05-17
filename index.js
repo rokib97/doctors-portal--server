@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+var nodemailer = require("nodemailer");
+var sgTransport = require("nodemailer-sendgrid-transport");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const app = express();
 require("dotenv").config();
@@ -30,6 +32,42 @@ const verifyJWT = (req, res, next) => {
     }
     req.decoded = decoded;
     next();
+  });
+};
+
+// send mail to booking user
+const emailSenderOptions = {
+  auth: {
+    api_key: process.env.EMAIL_SENDER_NEW_API,
+  },
+};
+
+console.log(emailSenderOptions.auth.api_key);
+var emailClient = nodemailer.createTransport(sgTransport(emailSenderOptions));
+const sendAppoinmentEmail = (booking) => {
+  const { patient, patientName, date, treatment, slot } = booking;
+  const email = {
+    from: process.env.EMAIL_SENDER,
+    to: patient,
+    subject: `Your Appoinment for ${treatment} is on ${date} at ${slot} is confirmed.`,
+    text: `Your Appoinment for ${treatment} is on ${date} at ${slot} is confirmed.`,
+    html: `
+    <div>
+      <p>Hello ${patientName},</p>
+      <h3>Your Appoinment is Confirmed for ${treatment}</h3>
+      <p>Looking forward to see you on ${date} at ${slot}</p>
+      <h3>Our Address</h3>
+      <p>AndorKilla Bandorbon, Bangladesh</p>
+      <a href="https://www.programming-hero.com/">Subscribe</a>
+    </div>
+    `,
+  };
+  emailClient.sendMail(email, function (err, info) {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log("Message sent: ", info);
+    }
   });
 };
 
@@ -171,6 +209,8 @@ async function run() {
         return res.send({ success: false, booking: exists });
       }
       const result = await bookingCollection.insertOne(booking);
+      console.log("Sending Email");
+      sendAppoinmentEmail(booking);
       return res.send({ success: true, result });
     });
     // doctor collection api
