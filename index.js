@@ -45,7 +45,6 @@ async function run() {
 
     // verify admin
     const verifyAdmin = async (req, res, next) => {
-      const email = req.params.email;
       const requester = req.decoded.email;
       const requesterAccount = await userCollection.findOne({
         email: requester,
@@ -184,6 +183,14 @@ async function run() {
     // manage doctors api
     app.get("/doctor", verifyJWT, verifyAdmin, async (req, res) => {
       const doctors = await doctorCollection.find().toArray();
+      res.send(doctors);
+    });
+
+    // delete doctor api
+    app.delete("/doctor/:email", verifyJWT, verifyAdmin, async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const doctors = await doctorCollection.deleteOne(filter);
       res.send(doctors);
     });
   } finally {
