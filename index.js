@@ -84,6 +84,9 @@ async function run() {
     const bookingCollection = client.db("doctors_portal").collection("booking");
     const userCollection = client.db("doctors_portal").collection("users");
     const doctorCollection = client.db("doctors_portal").collection("doctors");
+    const paymentCollection = client
+      .db("doctors_portal")
+      .collection("payments");
 
     // verify admin
     const verifyAdmin = async (req, res, next) => {
@@ -225,6 +228,26 @@ async function run() {
       // sendAppoinmentEmail(booking);
       return res.send({ success: true, result });
     });
+
+    // store payment data on database api
+    app.patch("/booking/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const payment = req.body;
+      const filter = { _id: ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          paid: true,
+          transactionId: payment.transactionId,
+        },
+      };
+      const result = await paymentCollection.insertOne(payment);
+      const updatedBooking = await bookingCollection.updateOne(
+        filter,
+        updateDoc
+      );
+      res.send(updatedBooking);
+    });
+
     // doctor collection api
     app.post("/doctor", verifyJWT, verifyAdmin, async (req, res) => {
       const doctor = req.body;
@@ -248,17 +271,15 @@ async function run() {
 
     // payment api
     app.post("/create-payment-intent", verifyJWT, async (req, res) => {
-      const { price } = req.body;
+      const service = req.body;
+      const price = service.price;
       const amount = price * 100;
-      // Create a PaymentIntent with the order amount and currency
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
         currency: "usd",
         payment_method_types: ["card"],
       });
-      res.send({
-        clientSecret: paymentIntent.client_secret,
-      });
+      res.send({ clientSecret: paymentIntent.client_secret });
     });
   } finally {
     // await client.close();
